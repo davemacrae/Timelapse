@@ -1,7 +1,7 @@
 #!/bin/sh
 
 DAY=$(date --date=yesterday +%Y-%m-%d)
-DIR=/home/dave/timelapse
+DIR=/home/dave/src/Timelapse
 
 cd ${DIR}
 
@@ -17,6 +17,7 @@ cp -r /backup/DCIM/Timelapse/${DAY} Timelapse
 rm -f ${DAY}.script
 rm -f ${DAY}.mp4
 
+# We really need to get the deatils of sunrise and sunset so we can filter out the darkness from the images.
 for i in $(find Timelapse/${DAY} ! -type d ! -size 0 | sort) 
 do 
     echo "file '${i}'" >> ${DAY}.script
