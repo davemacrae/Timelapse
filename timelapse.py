@@ -9,6 +9,7 @@ Description: This module gathers image files taken between dawn and dusk for a g
     DONE: Add argument parsing to specify date.
     DONE: Add debug argument to toggle debug prints.
     DONE: Make a shorter version of the video for quick viewing.
+    DONE: Tidy up output files post-processing.
 
 '''
 from sun import get_sun_data
@@ -17,6 +18,7 @@ import subprocess
 import shlex
 from pathlib import Path
 import argparse
+from os import remove
 
 CITY_NAME = "Edinburgh"
 # BASE = "/home/dave/src/Timelapse/Timelapse/"
@@ -94,8 +96,6 @@ def gen_script(file_list, date_time, duration) -> None:
         for file in file_list:
             script_file.write(f"file '{file}'\n")
             script_file.write(f"duration {duration}\n")
-    if args.debug:
-        print(f"Generated script: {script_name}")
 
     script = f"ffmpeg -hide_banner -loglevel error -y -f concat -safe 0 -i {script_name} -fps_mode vfr -c:v libx265 -pix_fmt yuv420p -x265-params log-level=quiet {day}-{duration}.mkv"
     ffmpeg = shlex.split(script)
@@ -103,6 +103,10 @@ def gen_script(file_list, date_time, duration) -> None:
     p.wait()
     if p.returncode != 0:
         print(f'Command {p.args} exited with {p.returncode} code, output: \n{p.stdout}')
+
+    # Tidy up script file
+    script_file.close()
+    remove(script_name)
 
 def main() -> None:
     ''' Main function to gather files and generate timelapse videos. '''
