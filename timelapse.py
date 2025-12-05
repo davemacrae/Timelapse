@@ -6,8 +6,8 @@ Description: This module gathers image files taken between dawn and dusk for a g
 
     TODO: Handle cases where no files are found between dawn and dusk.
     TODO: Add error handling for subprocess calls.
-    TODO: Add argument parsing to specify date.
-    TODO: Add debug argument to toggle debug prints.
+    DONE: Add argument parsing to specify date.
+    DONE: Add debug argument to toggle debug prints.
     DONE: Make a shorter version of the video for quick viewing.
 
 '''
@@ -16,23 +16,35 @@ from datetime import datetime, timedelta
 import subprocess
 import shlex
 from pathlib import Path
+import argparse
 
 CITY_NAME = "Edinburgh"
-BASE = "/home/dave/src/Timelapse/Timelapse/"
+# BASE = "/home/dave/src/Timelapse/Timelapse/"
+BASE = "/backup/DCIM/Timelapse/"
 
-def gather_files (date_time):
+def arg_parser() -> argparse.Namespace:
+
+    ''' Process the command line arguments '''
+
+    parser = argparse.ArgumentParser(description="Timelapse video generator")
+    parser.add_argument('--debug', action="store_true", help="Enable debug output")
+    parser.add_argument('--date', type=str, help="Date to process in YYYY-MM-DD format (default: yesterday)")
+
+    return parser.parse_args()
+
+def gather_files (date_time) -> list:
     ''' Gather files between start and finish times for timelapse processing. '''
     # Calculate the time of Dusk and Dawn for date_time
     
     sun_data = get_sun_data(CITY_NAME, date_time)
-    if debug:
-        print(f"Sun position in {CITY_NAME} on {date_time}:")
+    if args.debug:
+        print(f"Sun data in {CITY_NAME} on {date_time}:")
         print(f"Dawn: {sun_data['dawn']}")
         print(f"Sunrise: {sun_data['sunrise']}")
         print(f"Sunset: {sun_data['sunset']}")
         print(f"Dusk: {sun_data['dusk']}")
-
         print(f"Process from {sun_data['dawn'].hour}:{sun_data['dawn'].minute} to {sun_data['dusk'].hour}:{sun_data['dusk'].minute} for timelapse photography.")
+
     first_hour = sun_data['dawn'].hour
     last_hour = sun_data['dusk'].hour
     first_minute = sun_data['dawn'].minute
@@ -63,10 +75,10 @@ def gather_files (date_time):
             f = Path(dir_path)
             glob_path = base_day + "_" + hour_str + "-" + minute_str + "-*_001.jpg"
             f = f.glob(glob_path)
-            # if debug:
-            #     for i in f:
-            #         print(f"{i.parent}/{i.name}" )
-            #     print(f"Gathering file: {file_path}")
+            if args.debug:
+                for i in f:
+                    print(f"{i.parent}/{i.name}" )
+                print(f"Gathering file: {file_path}")
             # Here you would add code to actually process the file 
             for i in f:
                 if i.stat().st_size > 0:
@@ -74,7 +86,7 @@ def gather_files (date_time):
 
     return(file_list)
 
-def gen_script(file_list, date_time, duration):
+def gen_script(file_list, date_time, duration) -> None:
     ''' Generate a script to process the gathered files into a timelapse video. '''
     day = date_time.strftime("%Y-%m-%d")
     script_name = f"{day}.script"
@@ -82,24 +94,28 @@ def gen_script(file_list, date_time, duration):
         for file in file_list:
             script_file.write(f"file '{file}'\n")
             script_file.write(f"duration {duration}\n")
-    if debug:
+    if args.debug:
         print(f"Generated script: {script_name}")
 
     script = f"ffmpeg -hide_banner -loglevel error -y -f concat -safe 0 -i {script_name} -fps_mode vfr -c:v libx265 -pix_fmt yuv420p -x265-params log-level=quiet {day}-{duration}.mkv"
-    args = shlex.split(script)
-    p = subprocess.Popen(args)
+    ffmpeg = shlex.split(script)
+    p = subprocess.Popen(ffmpeg, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     p.wait()
     if p.returncode != 0:
         print(f'Command {p.args} exited with {p.returncode} code, output: \n{p.stdout}')
 
-def main():
+def main() -> None:
     ''' Main function to gather files and generate timelapse videos. '''
-    # For now, we just process yesterday's date
-    date_time = datetime.now() - timedelta(days=1)
+    # Determine the date to process
+    if args.date:
+        date_time = datetime.strptime(args.date, "%Y-%m-%d")
+    else:
+        date_time = datetime.now() - timedelta(days=1)
     files = gather_files(date_time)
     gen_script(files, date_time, duration=0.25)
     gen_script(files, date_time, duration=0.05)
 
 if __name__ == "__main__":
-    debug = True
+
+    args = arg_parser()
     main()
