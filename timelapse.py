@@ -8,6 +8,7 @@ Description: This module gathers image files taken between dawn and dusk for a g
     TODO: Add error handling for subprocess calls.
     TODO: Add argument parsing to specify date.
     TODO: Add debug argument to toggle debug prints.
+    DONE: Make a shorter version of the video for quick viewing.
 
 '''
 from sun import get_sun_data
@@ -73,18 +74,18 @@ def gather_files (date_time):
 
     return(file_list)
 
-def gen_script(file_list, date_time):
+def gen_script(file_list, date_time, duration):
     ''' Generate a script to process the gathered files into a timelapse video. '''
     day = date_time.strftime("%Y-%m-%d")
     script_name = f"{day}.script"
     with open(script_name, 'w') as script_file:
         for file in file_list:
             script_file.write(f"file '{file}'\n")
-            script_file.write("duration 0.05\n")
+            script_file.write(f"duration {duration}\n")
     if debug:
         print(f"Generated script: {script_name}")
 
-    script = f"ffmpeg -hide_banner -loglevel error -y -f concat -safe 0 -i {script_name} -fps_mode vfr -c:v libx265 -pix_fmt yuv420p -x265-params log-level=quiet {day}.mp4"
+    script = f"ffmpeg -hide_banner -loglevel error -y -f concat -safe 0 -i {script_name} -fps_mode vfr -c:v libx265 -pix_fmt yuv420p -x265-params log-level=quiet {day}-{duration}.mkv"
     args = shlex.split(script)
     p = subprocess.Popen(args)
     p.wait()
@@ -92,9 +93,12 @@ def gen_script(file_list, date_time):
         print(f'Command {p.args} exited with {p.returncode} code, output: \n{p.stdout}')
 
 def main():
+    ''' Main function to gather files and generate timelapse videos. '''
+    # For now, we just process yesterday's date
     date_time = datetime.now() - timedelta(days=1)
     files = gather_files(date_time)
-    gen_script(files, date_time)
+    gen_script(files, date_time, duration=0.25)
+    gen_script(files, date_time, duration=0.05)
 
 if __name__ == "__main__":
     debug = True
