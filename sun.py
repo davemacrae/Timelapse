@@ -12,7 +12,7 @@ from astral.sun import sun
 
 import datetime
 
-def get_sun_position(city_name, date_time=None):
+def get_sun_data(city_name, date_time=None):
     """
     Calculate the position of the sun for a given city and date/time.
 
@@ -38,13 +38,9 @@ def get_sun_position(city_name, date_time=None):
 
     return {
         'sunrise': my_sun['sunrise'],
-        'sunset': my_sun['sunset']
+        'sunset': my_sun['sunset'],
+        'dawn': my_sun['dawn'],
+        'dusk': my_sun['dusk']
+
     }
 
-if __name__ == "__main__":
-    city_name = "Edinburgh"
-    date_time = datetime.date(2025, 12, 21)
-    sun_position = get_sun_position(city_name, date_time)
-    print(f"Sun position in {city_name} on {date_time}:")
-    print(f"Sunrise: {sun_position['sunrise']}")
-    print(f"Sunset: {sun_position['sunset']}")
