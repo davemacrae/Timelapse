@@ -4,8 +4,8 @@ Module: timelapse
 Description: This module gathers image files taken between dawn and dusk for a given date
              and generates a timelapse video script. It thenb rus ffmpwg to create the video.
 
-    TODO: Handle cases where no files are found between dawn and dusk.
-    TODO: Add error handling for subprocess calls.
+    DONE: Handle cases where no files are found between dawn and dusk.
+    DONE: Add error handling for subprocess calls.
     DONE: Add argument parsing to specify date.
     DONE: Add debug argument to toggle debug prints.
     DONE: Make a shorter version of the video for quick viewing.
@@ -108,8 +108,14 @@ def gen_video(file_list, date_time, duration) -> None:
 
     script = f"ffmpeg -hide_banner -loglevel error -y -f concat -safe 0 -i {script_name} -fps_mode vfr -c:v libx265 -pix_fmt yuv420p -x265-params log-level=quiet {out_file}"
     ffmpeg = shlex.split(script)
-    p = subprocess.Popen(ffmpeg, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    p.wait()
+    try:
+        p = subprocess.Popen(ffmpeg, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        p.wait()
+    except Exception as e:
+        print(f"Error executing command: {e}")
+        remove(script_name) if script_name and Path(script_name).exists() else None
+        remove(out_file) if Path(out_file).exists() else None
+        return
     if p.returncode != 0:
         print(f'Command {p.args} exited with {p.returncode} code, output: \n{p.stdout}')
 
@@ -121,14 +127,27 @@ def main() -> None:
     ''' Main function to gather files and generate timelapse videos. '''
     # Determine the date to process
     if args.date:
-        date_time = datetime.strptime(args.date, "%Y-%m-%d")
+        try:
+            date_time = datetime.strptime(args.date, "%Y-%m-%d")
+        except ValueError:
+            print("Invalid date or format. Please use YYYY-MM-DD.")
+            return
     else:
         date_time = datetime.now() - timedelta(days=1)
     files = gather_files(date_time)
-    gen_video(files, date_time, duration=0.25)
-    gen_video(files, date_time, duration=0.05)
+    if files:
+        gen_video(files, date_time, duration=0.25)
+        gen_video(files, date_time, duration=0.05)
+    else:
+        if args.debug:
+            print("No files found for the specified date.")
 
 if __name__ == "__main__":
 
+    script_name = ""
     args = arg_parser()
-    main()
+    try:
+        main()
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        remove(script_name) if script_name and Path(script_name).exists() else None
