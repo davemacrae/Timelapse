@@ -10,6 +10,7 @@ Description: This module gathers image files taken between dawn and dusk for a g
     DONE: Add debug argument to toggle debug prints.
     DONE: Make a shorter version of the video for quick viewing.
     DONE: Tidy up output files post-processing.
+    TODO: Compress and remove original images after processing.
 
 '''
 from sun import get_sun_data
@@ -23,6 +24,7 @@ from os import remove
 CITY_NAME = "Edinburgh"
 # BASE = "/home/dave/src/Timelapse/Timelapse/"
 BASE = "/backup/DCIM/Timelapse/"
+OUTPUT = "/home/dave/Videos/Timelapse/"
 
 def arg_parser() -> argparse.Namespace:
 
@@ -88,16 +90,24 @@ def gather_files (date_time) -> list:
 
     return(file_list)
 
-def gen_script(file_list, date_time, duration) -> None:
+def gen_video(file_list, date_time, duration) -> None:
     ''' Generate a script to process the gathered files into a timelapse video. '''
+    
     day = date_time.strftime("%Y-%m-%d")
+    month = date_time.strftime("%m")
+    year = date_time.strftime("%Y")
+    output_dir = OUTPUT + year + "/" + month + "/"
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+
+    out_file = output_dir + day + f"-{duration}.mkv"
+
     script_name = f"{day}.script"
     with open(script_name, 'w') as script_file:
         for file in file_list:
             script_file.write(f"file '{file}'\n")
             script_file.write(f"duration {duration}\n")
 
-    script = f"ffmpeg -hide_banner -loglevel error -y -f concat -safe 0 -i {script_name} -fps_mode vfr -c:v libx265 -pix_fmt yuv420p -x265-params log-level=quiet {day}-{duration}.mkv"
+    script = f"ffmpeg -hide_banner -loglevel error -y -f concat -safe 0 -i {script_name} -fps_mode vfr -c:v libx265 -pix_fmt yuv420p -x265-params log-level=quiet {out_file}"
     ffmpeg = shlex.split(script)
     p = subprocess.Popen(ffmpeg, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     p.wait()
@@ -116,8 +126,8 @@ def main() -> None:
     else:
         date_time = datetime.now() - timedelta(days=1)
     files = gather_files(date_time)
-    gen_script(files, date_time, duration=0.25)
-    gen_script(files, date_time, duration=0.05)
+    gen_video(files, date_time, duration=0.25)
+    gen_video(files, date_time, duration=0.05)
 
 if __name__ == "__main__":
 
