@@ -22,7 +22,6 @@ import argparse
 from os import remove
 
 CITY_NAME = "Edinburgh"
-# BASE = "/home/dave/src/Timelapse/Timelapse/"
 BASE = "/backup/DCIM/Timelapse/"
 OUTPUT = "/home/dave/Videos/Timelapse/"
 
@@ -99,7 +98,7 @@ def gen_video(file_list, date_time, duration) -> None:
     output_dir = OUTPUT + year + "/" + month + "/"
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-    out_file = output_dir + day + f"-{duration}.mkv"
+    out_file = output_dir + day + f"-{duration}.mp4"
 
     script_name = f"{day}.script"
     with open(script_name, 'w') as script_file:
