@@ -27,7 +27,9 @@ OUTPUT = "/home/dave/Videos/Timelapse"
 
 def arg_parser() -> argparse.Namespace:
 
-    ''' Process the command line arguments '''
+    ''' Process the command line arguments 
+        :return: Parsed arguments namespace
+    '''
 
     parser = argparse.ArgumentParser(description="Timelapse video generator")
     parser.add_argument('--debug', action="store_true", help="Enable debug output")
@@ -38,8 +40,10 @@ def arg_parser() -> argparse.Namespace:
 
     return parser.parse_args()
 
-def gather_files (date_time) -> list:
-    ''' Gather files between start and finish times for timelapse processing. '''
+def gather_files (date_time: datetime) -> list:
+    ''' Gather files between start and finish times for timelapse processing. 
+        :param date_time: Date for which the files are being gathered
+        :return: List of file paths to include in the timelapse'''
     # Calculate the time of Dusk and Dawn for date_time
     
     sun_data = get_sun_data(CITY_NAME, date_time)
@@ -50,6 +54,8 @@ def gather_files (date_time) -> list:
         print(f"Sunset: {sun_data['sunset']}")
         print(f"Dusk: {sun_data['dusk']}")
         print(f"Process from {sun_data['dawn'].hour}:{sun_data['dawn'].minute} to {sun_data['dusk'].hour}:{sun_data['dusk'].minute} for timelapse photography.")
+        if args.full:
+            print("Full day timelapse requested.")
 
     if args.full:
         first_hour = 0
@@ -95,8 +101,14 @@ def gather_files (date_time) -> list:
 
     return(file_list)
 
-def gen_video(file_list, date_time, duration) -> None:
-    ''' Generate a script to process the gathered files into a timelapse video. '''
+def gen_video(file_list: list, date_time: datetime, duration: float) -> None:
+    ''' Generate a script to process the gathered files into a timelapse 
+        video and then use ffmpeg to create the video.
+            :param file_list: List of file paths to include in the timelapse
+            :param date_time: Date for which the timelapse is being generated
+            :param duration: Duration in seconds for each image in the timelapse
+            :return: None
+    '''
     
     day = date_time.strftime("%Y-%m-%d")
     month = date_time.strftime("%m")
@@ -151,7 +163,7 @@ def main() -> None:
 
 if __name__ == "__main__":
 
-    script_name = ""
+    script_name = "" # need this to be global so we can zap it on error
     args = arg_parser()
     try:
         main()
