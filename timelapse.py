@@ -22,8 +22,8 @@ import argparse
 from os import remove
 
 CITY_NAME = "Edinburgh"
-BASE = "/backup/DCIM/Timelapse/"
-OUTPUT = "/home/dave/Videos/Timelapse/"
+BASE = "/backup/DCIM/Timelapse"
+OUTPUT = "/home/dave/Videos/Timelapse"
 
 def arg_parser() -> argparse.Namespace:
 
@@ -33,6 +33,8 @@ def arg_parser() -> argparse.Namespace:
     parser.add_argument('--debug', action="store_true", help="Enable debug output")
     parser.add_argument('--date', type=str, help="Date to process in YYYY-MM-DD format (default: yesterday)")
     parser.add_argument('--full', action="store_true", help="Generate full-day video")
+    parser.add_argument('--base', type=str, help="Base directory for timelapse images", default=BASE)
+    parser.add_argument('--output', type=str, help="Output directory for timelapse videos", default=OUTPUT)
 
     return parser.parse_args()
 
@@ -64,13 +66,13 @@ def gather_files (date_time) -> list:
 
     file_list = []
 
-    # iterate through BASE/first to BASE/last
-    # We need partial extraction from DASE/first and BASE/last but full extraction from BASE/first+1 to BASE/last-1
+    # iterate through args.base/first to args.base/last
+    # We need partial extraction from args.base/first and args.base/last but full extraction from args.base/first+1 to args.base/last-1
     # e.g. if first is 06:15 and last is 18:45
-    # we need BASE/06 from 15 mins, BASE/07 to BASE/17 fully, and BASE/18 to 45 mins
+    # we need args.base/06 from 15 mins, args.base/07 to args.base/17 fully, and args.base/18 to 45 mins
     for hour in range(first_hour, last_hour + 1):
         hour_str = f"{hour:02d}"
-        dir_path = BASE + base_day + "/" + hour_str + "/"
+        dir_path = args.base + "/" + base_day + "/" + hour_str + "/"
         if hour == first_hour:
             start_minute = first_minute
         else:
@@ -81,14 +83,12 @@ def gather_files (date_time) -> list:
             end_minute = 59
         for minute in range(start_minute, end_minute + 1):
             minute_str = f"{minute:02d}"
-            file_path = dir_path + base_day + "_" + hour_str + "-" + minute_str + "-*_001.jpg"
             f = Path(dir_path)
             glob_path = base_day + "_" + hour_str + "-" + minute_str + "-*_001.jpg"
             f = f.glob(glob_path)
             if args.debug:
                 for i in f:
-                    print(f"{i.parent}/{i.name}" )
-                print(f"Gathering file: {file_path}")
+                    print(f"Gathering file: {i.parent}/{i.name}")
             for i in f:
                 if i.stat().st_size > 0:
                     file_list.append(f"{i.parent}/{i.name}")
@@ -101,10 +101,10 @@ def gen_video(file_list, date_time, duration) -> None:
     day = date_time.strftime("%Y-%m-%d")
     month = date_time.strftime("%m")
     year = date_time.strftime("%Y")
-    output_dir = OUTPUT + year + "/" + month + "/"
+    output_dir = args.output + "/" + year + "/" + month + "/"
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-    out_file = output_dir + day + f"-{duration}.mp4"
+    out_file = output_dir + "/" + day + f"-{duration}.mp4"
 
     script_name = f"{day}.script"
     with open(script_name, 'w') as script_file:
