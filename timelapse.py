@@ -32,6 +32,7 @@ def arg_parser() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Timelapse video generator")
     parser.add_argument('--debug', action="store_true", help="Enable debug output")
     parser.add_argument('--date', type=str, help="Date to process in YYYY-MM-DD format (default: yesterday)")
+    parser.add_argument('--full', action="store_true", help="Generate full-day video")
 
     return parser.parse_args()
 
@@ -48,10 +49,16 @@ def gather_files (date_time) -> list:
         print(f"Dusk: {sun_data['dusk']}")
         print(f"Process from {sun_data['dawn'].hour}:{sun_data['dawn'].minute} to {sun_data['dusk'].hour}:{sun_data['dusk'].minute} for timelapse photography.")
 
-    first_hour = sun_data['dawn'].hour
-    last_hour = sun_data['dusk'].hour
-    first_minute = sun_data['dawn'].minute
-    last_minute = sun_data['dusk'].minute
+    if args.full:
+        first_hour = 0
+        last_hour = 23
+        first_minute = 0
+        last_minute = 59
+    else:
+        first_hour = sun_data['dawn'].hour
+        last_hour = sun_data['dusk'].hour
+        first_minute = sun_data['dawn'].minute
+        last_minute = sun_data['dusk'].minute
 
     base_day = date_time.strftime("%Y-%m-%d")
 
@@ -82,7 +89,6 @@ def gather_files (date_time) -> list:
                 for i in f:
                     print(f"{i.parent}/{i.name}" )
                 print(f"Gathering file: {file_path}")
-            # Here you would add code to actually process the file 
             for i in f:
                 if i.stat().st_size > 0:
                     file_list.append(f"{i.parent}/{i.name}")
@@ -133,6 +139,7 @@ def main() -> None:
             print("Invalid date or format. Please use YYYY-MM-DD.")
             return
     else:
+        # Default to yesterday
         date_time = datetime.now() - timedelta(days=1)
     files = gather_files(date_time)
     if files:
