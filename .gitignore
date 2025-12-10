@@ -3,6 +3,7 @@
 *.mkv
 *.script
 Timelapse
+.vscode
 
 
 # Byte-compiled / optimized / DLL files
