@@ -5,7 +5,7 @@ Module: sun
 Description: This module provides functions to calculate the position of the sun
              based on date, time, and geographic location.
 """
-import astral
+
 from astral import LocationInfo
 from astral.geocoder import lookup, database
 from astral.sun import sun
