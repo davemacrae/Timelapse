@@ -10,9 +10,9 @@ from astral import LocationInfo
 from astral.geocoder import lookup, database
 from astral.sun import sun
 
-import datetime
+from datetime import datetime
 
-def get_sun_data(city_name, date_time=None):
+def get_sun_data(city_name: str, date_time: datetime) -> dict:
     """
     Calculate the position of the sun for a given city and date/time.
 
@@ -22,7 +22,7 @@ def get_sun_data(city_name, date_time=None):
     """
     
     if date_time is None:
-        date_time = datetime.datetime.now()
+        date_time = datetime.now()
 
     try:
         city_data: LocationInfo = lookup(city_name, database()) # type: ignore
